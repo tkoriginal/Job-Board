@@ -1,65 +1,59 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
+import { createJob } from '../utils/request';
 
-export class JobForm extends Component {
-  constructor(props) {
-    super(props);
-    this.state = { title: '', description: '' };
-  }
+export const JobForm = (props) => {
+  const [jobInfo, setJobInfo] = useState({ title: '', description: '' });
 
-  handleChange(event) {
+  const handleChange = (event) => {
     const { name, value } = event.target;
-    this.setState({ [name]: value });
-  }
+    setJobInfo((prevState) => ({ ...prevState, [name]: value }));
+  };
 
-  handleClick(event) {
+  const handleClick = (event) => {
     event.preventDefault();
-    console.log('should post a new job:', this.state);
-  }
-
-  render() {
-    const { title, description } = this.state;
-    return (
-      <div>
-        <h1 className="title">New Job</h1>
-        <div className="box">
-          <form>
-            <div className="field">
-              <label className="label">Title</label>
-              <div className="control">
-                <input
-                  className="input"
-                  type="text"
-                  name="title"
-                  value={title}
-                  onChange={this.handleChange.bind(this)}
-                />
-              </div>
+    const companyId = 'SJV0-wdOM';
+    createJob({ ...jobInfo, companyId }).then((job) => {
+      props.history.push(`/jobs/${job.id}`);
+    });
+  };
+  return (
+    <div>
+      <h1 className="title">New Job</h1>
+      <div className="box">
+        <form>
+          <div className="field">
+            <label className="label">Title</label>
+            <div className="control">
+              <input
+                className="input"
+                type="text"
+                name="title"
+                value={jobInfo.title}
+                onChange={handleChange}
+              />
             </div>
-            <div className="field">
-              <label className="label">Description</label>
-              <div className="control">
-                <textarea
-                  className="input"
-                  style={{ height: '10em' }}
-                  name="description"
-                  value={description}
-                  onChange={this.handleChange.bind(this)}
-                />
-              </div>
+          </div>
+          <div className="field">
+            <label className="label">Description</label>
+            <div className="control">
+              <textarea
+                className="input"
+                style={{ height: '10em' }}
+                name="description"
+                value={jobInfo.description}
+                onChange={handleChange}
+              />
             </div>
-            <div className="field">
-              <div className="control">
-                <button
-                  className="button is-link"
-                  onClick={this.handleClick.bind(this)}
-                >
-                  Submit
-                </button>
-              </div>
+          </div>
+          <div className="field">
+            <div className="control">
+              <button className="button is-link" onClick={handleClick}>
+                Submit
+              </button>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       </div>
-    );
-  }
-}
+    </div>
+  );
+};

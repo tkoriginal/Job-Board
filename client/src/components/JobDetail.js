@@ -7,7 +7,7 @@ export const JobDetail = (props) => {
   const { jobId } = props.match.params;
   useEffect(() => {
     loadJob(jobId).then((job) => setJob(job));
-  }, []);
+  }, [jobId]);
 
   if (!job) return <p>Loading Job...</p>;
   return (
