@@ -11,8 +11,7 @@ export const JobForm = (props) => {
 
   const handleClick = (event) => {
     event.preventDefault();
-    const companyId = 'SJV0-wdOM';
-    createJob({ ...jobInfo, companyId }).then((job) => {
+    createJob({ input: jobInfo }).then((job) => {
       props.history.push(`/jobs/${job.id}`);
     });
   };
