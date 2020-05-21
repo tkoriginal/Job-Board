@@ -20,12 +20,68 @@ const authLink = new ApolloLink((operation, forward) => {
   return forward(operation);
 });
 
+const jobDetailFragment = gql`
+  fragment JobDetail on Job {
+    id
+    title
+    description
+    company {
+      id
+      name
+    }
+  }
+`;
+const loadJobQuery = gql`
+  query JobQuery($id: ID!) {
+    job(id: $id) {
+      ...JobDetail
+    }
+  }
+  ${jobDetailFragment}
+`;
+
+const loadCompanyQuery = gql`
+  query CompanyQuery($id: ID!) {
+    company(id: $id) {
+      name
+      description
+      jobs {
+        title
+        id
+      }
+    }
+  }
+`;
+
+const loadJobsQuery = gql`
+  {
+    jobs {
+      title
+      id
+      description
+      company {
+        id
+        name
+      }
+    }
+  }
+`;
+
+const createJobMutation = gql`
+  mutation CreateJob($input: CreateJobInput) {
+    job: createJob(input: $input) {
+      ...JobDetail
+    }
+  }
+  ${jobDetailFragment}
+`;
+
 const client = new ApolloClient({
   link: ApolloLink.from([authLink, new HttpLink({ uri: API_URL })]),
   cache: new InMemoryCache(),
 });
 
-// This is how we sent request prior to migratinng to Apollo Client
+// This is how we sent request prior to migrating to Apollo Client
 // const gqlRequest = async (query, variables = {}) => {
 //   const request = {
 //     method: 'POST',
@@ -46,75 +102,41 @@ const client = new ApolloClient({
 // };
 
 export const loadJobs = async () => {
-  const query = gql`
-    {
-      jobs {
-        title
-        id
-        company {
-          id
-          name
-        }
-      }
-    }
-  `;
   const {
     data: { jobs },
-  } = await client.query({ query });
+  } = await client.query({ query: loadJobsQuery, fetchPolicy: 'no-cache' });
   return jobs;
 };
 
 export const loadJob = async (id) => {
-  const query = gql`
-    query JobQuery($id: ID!) {
-      job(id: $id) {
-        id
-        title
-        description
-        company {
-          id
-          name
-        }
-      }
-    }
-  `;
   const {
     data: { job },
-  } = await client.query({ query, variables: { id } });
+  } = await client.query({ query: loadJobQuery, variables: { id } });
   return job;
 };
 
 export const loadCompany = async (id) => {
-  const query = gql`
-    query CompanyQuery($id: ID!) {
-      company(id: $id) {
-        name
-        description
-        jobs {
-          title
-          id
-        }
-      }
-    }
-  `;
   const {
     data: { company },
-  } = await client.query({ query, variables: { id } });
+  } = await client.query({ query: loadCompanyQuery, variables: { id } });
   return company;
 };
 
 export const createJob = async (input) => {
-  const mutation = gql`
-    mutation CreateJob($input: CreateJobInput) {
-      job: createJob(input: $input) {
-        description
-        title
-        id
-      }
-    }
-  `;
   const {
     data: { job },
-  } = await client.mutate({ mutation, variables: input });
+  } = await client.mutate({
+    mutation: createJobMutation,
+    variables: input,
+    update: (cache, mutationResult) => {
+      const { data } = mutationResult;
+      console.log(data);
+      cache.writeQuery({
+        query: loadJobQuery,
+        variables: { id: data.job.id },
+        data,
+      });
+    },
+  });
   return job;
 };
